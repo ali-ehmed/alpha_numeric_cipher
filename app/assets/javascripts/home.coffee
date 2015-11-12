@@ -12,7 +12,7 @@ encryptCipher = ->
         if $response.status == 'error'
           swal
             title: 'OOPs..!'
-            type: 'info'
+            type: 'warning'
             text: '<strong>' + $response.message + '</strong>'
             html: true
         return
@@ -33,7 +33,7 @@ decryptCipher = ->
         if $response.status == 'error'
           swal
             title: 'OOPs..!'
-            type: 'info'
+            type: 'warning'
             text: '<strong>' + $response.message + '</strong>'
             html: true
         else
@@ -50,7 +50,7 @@ decryptCipher = ->
       error: (response) ->
         swal 'oops', 'Something went wrong'
 
-        
+
 $(document).on 'page:change', ->
 	encryptCipher()
 	decryptCipher()
