@@ -21,12 +21,15 @@ class HomeController < ApplicationController
 				for matched_val in @matched_list
 
   				if matched_val == s_text
+
 						numpad_hash.each do |numpad_key, numpad_val|
 							numpad_val.each_with_index do |value, index|
 								if s_text == value
+
 									cipher_val_index = index
 									numpad_number = numpad_key.to_s.split("_").last.to_i
 									numpad_number += 3
+
 									unless numpad_number > 9
 										generate_key = "numpad_#{numpad_number}".to_sym
 										numpad_hash[generate_key]
@@ -34,6 +37,7 @@ class HomeController < ApplicationController
 										numpad_number -= 9
 										generate_key = "numpad_#{numpad_number}".to_sym
 									end
+									logger.debug "--#{generate_key}--"
 									cipher_text << numpad_hash[generate_key][cipher_val_index]
 								end
 							end
@@ -90,6 +94,7 @@ class HomeController < ApplicationController
 										generate_key = "numpad_#{numpad_number}".to_sym
 										numpad_hash[generate_key]
 									end
+
 									@plain_text << numpad_hash[generate_key][plain_val_index]
 								end
 
@@ -125,7 +130,7 @@ class HomeController < ApplicationController
 			numpad_5: ["E", "N", "W"],
 			numpad_6: ["F", "O", "X"],
 			numpad_7: ["G", "P", "Y"],
-			numpad_8: ["H", "Q", "X"],
+			numpad_8: ["H", "Q", "Z"],
 			numpad_9: ["I", "R"]
 		}
   end
