@@ -1,0 +1,9 @@
+<div class="well">
+	<div class="plain_text_html">Plain text: <div id="encrypted_text"></div></div>
+	<div class="cipher_text_html">Cipher Text: <div id="dycrypted_text"></div></div>
+</div>
+
+<h1>Alpha-Numeric Cipher</h1>
+<p>Enter any Plain Text</p>
+<p><%= text_field_tag :plain_text, params[:plain_text] %></p>
+<p><%= button_tag "Convert", class: "btn btn-cipher", id: "convert_btn" %> <%= button_tag "Decrypt", class: "btn btn-cipher", id: "decrypt_btn" %></p>

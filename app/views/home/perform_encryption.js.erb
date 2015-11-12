@@ -1,0 +1,12 @@
+<% if params[:plain_text].present? %>
+  swal({
+    title: 'Yo..! <strong>Boom</strong>',
+    type: 'info',
+    text: 'Your Converted Cipher is <strong><%= @cipher_text %></strong>',
+    html: true
+  });
+
+  $('#encrypted_text').html("<%= @cipher_text %>");
+  $('#encrypted_text').css("font-weight", "bold")
+  $('#dycrypted_text').css("font-weight", "100")
+<% end %>
