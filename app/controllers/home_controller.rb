@@ -3,7 +3,15 @@ class HomeController < ApplicationController
   end
 
   def perform_encryption
-  	@plain_text = params[:plain_text]
+  	@plain_text = params[:plain_text].split(".").first
+
+  	if is_number?(@plain_text)
+  		@cipher_text = "#{@plain_text}. Please use your name INSTEAD"
+  		return
+  	end
+		number_text = @plain_text.scan(/\d+/).join
+		logger.debug "#{number_text}"
+  	
 
   	if @plain_text.present?
   		splitted_text = @plain_text.delete('').upcase.split("")
@@ -47,9 +55,9 @@ class HomeController < ApplicationController
   			end
   		end
 
-  		@cipher_text = cipher_text.join
+  		@cipher_text = cipher_text.join << number_text
 
-  		logger.debug "#{cipher_text}"
+  		logger.debug "#{cipher_text}#{number_text}"
 
   		respond_to do |format|
   			format.js
@@ -62,7 +70,15 @@ class HomeController < ApplicationController
   end
 
   def perform_decryption
-  	@cipher_text = params[:cipher_text]
+  	@cipher_text = params[:cipher_text].split(".").first
+
+  	if is_number?(@cipher_text)
+  		@plain_text = "#{@cipher_text}. Please use your name INSTEAD"
+  		render :json => { status: :created, plain_text: @plain_text }
+  		return
+  	end
+		number_text = @cipher_text.scan(/\d+/).join
+		logger.debug "#{number_text}"
 
   	if @cipher_text.present?
   		splitted_text = @cipher_text.delete('').upcase.split("")
@@ -105,7 +121,7 @@ class HomeController < ApplicationController
   			end
   		end
 
-  		@plain_text = @plain_text.join
+  		@plain_text = @plain_text.join << number_text
 
   		logger.debug "--#{@plain_text}--"
   		
@@ -119,7 +135,12 @@ class HomeController < ApplicationController
   	end
   end
 
-  private 
+  private
+
+  def is_number? string
+	  true if Float(string) rescue false
+	end
+ 
 
   def cipher_key
   	numpad_hash = {
