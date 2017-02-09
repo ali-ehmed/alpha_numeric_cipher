@@ -62,11 +62,11 @@ class Security
   end
 
   def validate_text value
-    raise "Plain Text or Cipher Text is incorrect. Use your name instead"
+    raise "Plain Text or Cipher Text is incorrect. Use your name instead" if is_number? value
   end
 
   def is_number? string
-    true if (string =~ /\d/).is_a? Integer else false
+    if (string =~ /\d/).is_a? Integer then true else false end
   end
 
 

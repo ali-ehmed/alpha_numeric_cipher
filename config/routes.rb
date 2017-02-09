@@ -1,4 +1,4 @@
 Rails.application.routes.draw do
-  get 'home/index'
-  root to: "home#index"
+  get 'cipher/index'
+  root to: "cipher#index"
 end

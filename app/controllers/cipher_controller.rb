@@ -1,4 +1,4 @@
-class HomeController < ApplicationController
+class CipherController < ApplicationController
 	respond_to :json, :html
 
 	class PersistenceResponse < SimpleDelegator
