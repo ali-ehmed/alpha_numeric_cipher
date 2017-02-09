@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/alpha_numeric_cipher.iml" filepath="$PROJECT_DIR$/.idea/alpha_numeric_cipher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../alphabetical_cipher/.idea/alpha_numeric_cipher.iml" filepath="$PROJECT_DIR$/../alphabetical_cipher/.idea/alpha_numeric_cipher.iml" />
     </modules>
   </component>
 </project>

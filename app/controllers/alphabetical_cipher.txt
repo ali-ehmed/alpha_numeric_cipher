@@ -1,0 +1,325 @@
+########### Server Side Code ###########
+
+# Encryption Controller
+
+#- cipher_controller.rb
+class CipherController < ApplicationController
+  respond_to :json, :html
+
+  # Response that needs be handle in Cipher class
+  # Using Simple Delegator to delegate all the functions inside this class for CipherController Class
+  class PersistenceResponse < SimpleDelegator
+    attr_accessor :converted_text, :message
+
+    def success
+      respond_with(status: :created, message: @message, converted_text: converted_text) do |format|
+        format.json
+      end
+    end
+
+    def failure
+      respond_with(status: :error, message: @message) do |format|
+        format.json
+      end
+    end
+  end
+
+  # Action
+  def index
+    if request.xhr?
+      begin
+        cipher = Cipher.new(params[:text])
+        cipher.subscribe PersistenceResponse.new(self)
+        cipher.send("perform_#{params[:perform]}")
+      rescue => e
+        response = PersistenceResponse.new self
+        response.message = e.message
+        response.failure and return
+      end
+    end
+  end
+end
+
+
+#- cipher.rb
+
+# Observer Module
+module Publisher
+  def subscribe(obj)
+    @observers ||= []
+    @observers << obj
+  end
+
+  def publish(message, *args)
+    return if @observers.blank?
+    @observers.each do |subscriber|
+      subscriber.send(message, *args) if subscriber.respond_to?(message)
+    end
+  end
+end
+
+# Encryption/Decryption Class
+class Cipher
+  include Publisher
+  attr_reader :text
+
+  def initialize(text)
+    self.text = text
+  end
+
+  def text=(value)
+    @text  = value.split(".").first
+    validate_text(value)
+  end
+
+  private
+
+  %w(encryption decryption).each do |method|
+    define_method "perform_" + method do
+      # If text includes number
+      # number_text = @text.scan(/\d+/).join
+
+      begin
+        if !@text
+          publish("message=", "Couldn't find text :(")
+          publish(:failure) and return
+        end
+
+        split_text = @text.delete('').upcase.split("")
+        num_pad_hash = cipher_key
+        @matched_list = []
+
+        num_pad_hash.each do |num_pad_key, num_pad_val|
+          num_pad_val.each.each do |num_pad_val|
+            @matched_list << num_pad_val
+          end
+        end
+
+        converted_text = perform_conversion!(method, split_text, num_pad_hash, @matched_list).join
+
+        publish("message=", "Your Converted Text is <strong>#{converted_text}</strong>")
+        publish("converted_text=", converted_text)
+        publish(:success) and return
+      rescue => e
+        publish("message=", e.message)
+        publish(:failure) and return
+      end
+    end
+  end
+
+  def validate_text value
+    raise "Plain Text or Cipher Text is incorrect. Use your name instead" if is_number? value
+  end
+
+  def is_number? string
+    if (string =~ /\d/).is_a? Integer then true else false end
+  end
+
+  # Cipher key from which Text should be encrypted/decrypted
+  def cipher_key
+    {
+        num_pad_1: ["A", "J", "S"],
+        num_pad_2: ["B", "K", "T"],
+        num_pad_3: ["C", "L", "U"],
+        num_pad_4: ["D", "M", "V"],
+        num_pad_5: ["E", "N", "W"],
+        num_pad_6: ["F", "O", "X"],
+        num_pad_7: ["G", "P", "Y"],
+        num_pad_8: ["H", "Q", "Z"],
+        num_pad_9: ["I", "R"]
+    }
+  end
+
+  # perform original conversion from encryption to decryption or vice versa
+  def perform_conversion!(method_type, split_text, num_pad_hash, matched_list)
+    converted_text = []
+
+    split_text.each_with_index do |s_text, index|
+      for matched_val in matched_list
+        if matched_val == s_text
+          num_pad_hash.each do |num_pad_key, num_pad_val|
+            num_pad_val.each_with_index do |value, index|
+
+              if s_text == value
+                conv_val_index = index
+                if method_type == "encryption"
+                  num_pad_number = num_pad_key.to_s.split("_").last.to_i
+                  num_pad_number += 3
+
+                  unless num_pad_number > 9
+                    generate_key = "num_pad_#{num_pad_number}".to_sym
+                    num_pad_hash[generate_key]
+                  else
+                    num_pad_number -= 9
+                    generate_key = "num_pad_#{num_pad_number}".to_sym
+                  end
+                else
+                  num_pad_number = num_pad_key.to_s.split("_").last.to_i
+                  num_pad_number -= 3
+
+                  if num_pad_number <= 0
+                    num_pad_number += 9
+                    generate_key = "num_pad_#{num_pad_number}".to_sym
+                  else
+                    generate_key = "num_pad_#{num_pad_number}".to_sym
+                    num_pad_hash[generate_key]
+                  end
+                end
+
+                converted_text << num_pad_hash[generate_key][conv_val_index]
+              end
+            end
+          end
+        end
+      end
+    end
+
+    converted_text
+  end
+end
+
+########### Client Side Code ###########
+
+#- cipher.coffee.js
+isNumeric = (myString) ->
+  return /\d/.test(myString);
+
+validateText = (text) ->
+  valid = true
+  if text == ''
+    valid = false
+    swal
+      title: 'Oops..!'
+      type: 'warning'
+      text: '<strong>Please Enter Text</strong>'
+      html: true
+  valid
+
+encryptCipher = ->
+	$('#convert_btn').on 'click', (e) ->
+    e.preventDefault()
+    $this = $(this)
+    if validateText($('#plain_text').val())
+      $.ajax
+        type: 'get'
+        url: 'cipher/index.json'
+        data: text: $('#plain_text').val(), perform: "encryption"
+        cache: false
+        dataType: "JSON"
+        success: (response) ->
+          $response = response
+          if $response.status == 'error'
+            swal
+              title: 'Oops..!'
+              type: 'warning'
+              text: $response.message
+              html: true
+          else
+            swal({
+              title: 'Yo..! <strong>Boom</strong>',
+              type: 'info',
+              text: $response.message,
+              html: true
+            });
+
+            $('#encrypted_text').html("#{$response.converted_text}");
+            $('#encrypted_text').css("font-weight", "bold")
+            $('#dycrypted_text').css("font-weight", "100")
+          return
+        error: (response) ->
+          swal 'oops', 'Something went wrong'
+
+decryptCipher = ->
+	$('#decrypt_btn').on 'click', (e) ->
+    e.preventDefault()
+    $this = $(this)
+    if validateText($('#encrypted_text').html())
+      $.ajax
+        type: 'get'
+        url: 'cipher/index.json'
+        data: text: $('#encrypted_text').html(), perform: "decryption"
+        dataType: "JSON"
+        success: (response) ->
+          $response = response
+          if $response.status == 'error'
+            swal
+              title: 'Oops..!'
+              type: 'warning'
+              text: $response.message
+              html: true
+          else
+            swal(
+              title: 'Yo..! <strong>Boom</strong>'
+              type: 'info'
+              text: $response.message
+              html: true)
+            $('#dycrypted_text').html("#{$response.converted_text}")
+            $('#dycrypted_text').css("font-weight", "bold")
+            $('#encrypted_text').css("font-weight", "100")
+          return
+        error: (response) ->
+          swal 'oops', 'Something went wrong'
+
+
+$(document).on 'page:change', ->
+	encryptCipher()
+	decryptCipher()
+
+# Stylesheets
+
+#- cipher.scss
+@import "bootstrap-sprockets";
+@import "bootstrap";
+body {
+	background-color: #669ACC !important;
+
+	div.well-app {
+		background-color: #FFFFFF;
+		border: 2px solid #000;
+		margin-top: 55px;
+		padding: 15px 45px 15px 45px;
+		text-align: center;
+	}
+}
+
+# Html View
+
+#- application.html.erb --> in layout file
+<!DOCTYPE html>
+<html>
+	<head>
+	  <title>AlphaNumericCipher</title>
+	  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+	  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+	  <%= csrf_meta_tags %>
+	</head>
+	<body>
+		<div class="container">
+			<div class="well-app">
+				<%= yield %>
+			</div>
+
+		</div>
+	</body>
+</html>
+
+#- Cipher Controller index.html.erb --> in cipher/index.html.erb
+<div class="well">
+	<div class="plain_text_html">Cipher Text: <div id="encrypted_text"></div></div>
+	<div class="cipher_text_html">Plain text: <div id="dycrypted_text"></div></div>
+</div>
+
+<h1>Alphabetical Cipher</h1>
+<p>Enter any Plain Text</p>
+<p><%= text_field_tag :plain_text, params[:plain_text] %></p>
+<p><%= button_tag "Convert", class: "btn btn-cipher", id: "convert_btn" %> <%= button_tag "Decrypt", class: "btn btn-cipher", id: "decrypt_btn" %></p>
+
+
+# routes.rb --> in config/routes.rb
+Rails.application.routes.draw do
+  get 'cipher/index'
+  root to: "cipher#index"
+end
+
+# Sweetalert Library
+https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert-dev.js
