@@ -1,3 +1,4 @@
+# Observer Module
 module Publisher
   def subscribe(obj)
     @observers ||= []
@@ -12,7 +13,8 @@ module Publisher
   end
 end
 
-class Security
+# Encryption/Decryption Class
+class Cipher
   include Publisher
   attr_reader :text
 
@@ -21,7 +23,6 @@ class Security
   end
 
   def text=(value)
-    puts 'Helo==============='
     @text  = value.split(".").first
     validate_text(value)
   end
@@ -30,7 +31,7 @@ class Security
 
   %w(encryption decryption).each do |method|
     define_method "perform_" + method do
-      # If text include number
+      # If text includes number
       # number_text = @text.scan(/\d+/).join
 
       begin
@@ -69,7 +70,7 @@ class Security
     if (string =~ /\d/).is_a? Integer then true else false end
   end
 
-
+  # Cipher key from which Text should be encrypted/decrypted
   def cipher_key
     {
         num_pad_1: ["A", "J", "S"],
@@ -84,7 +85,7 @@ class Security
     }
   end
 
-
+  # perform original conversion from encryption to decryption or vice versa
   def perform_conversion!(method_type, split_text, num_pad_hash, matched_list)
     converted_text = []
 

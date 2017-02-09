@@ -1,6 +1,9 @@
+# Encryption Controller
 class CipherController < ApplicationController
 	respond_to :json, :html
 
+	# Response that needs be handle in Cipher class
+	# Using Simple Delegator to delegate all the functions inside this class for CipherController Class
 	class PersistenceResponse < SimpleDelegator
 		attr_accessor :converted_text, :message
 
@@ -17,12 +20,13 @@ class CipherController < ApplicationController
 		end
 	end
 
-  def index
+	# Action
+	def index
 		if request.xhr?
 			begin
-				security = Security.new(params[:text])
-				security.subscribe PersistenceResponse.new(self)
-				security.send("perform_#{params[:perform]}")
+				cipher = Cipher.new(params[:text])
+				cipher.subscribe PersistenceResponse.new(self)
+				cipher.send("perform_#{params[:perform]}")
 			rescue => e
 				response = PersistenceResponse.new self
 				response.message = e.message
